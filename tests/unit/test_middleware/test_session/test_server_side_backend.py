@@ -230,6 +230,7 @@ async def test_cleared_session_with_session_cookie_deleted(path: str, memory_sto
         res = client.post(path)
         assert res.status_code == 201
         assert res.headers["set-cookie"].startswith("session=null;")
+        assert "max-age=0" in res.headers["set-cookie"].lower()
         assert not await memory_store.exists(session_id)
 
 
@@ -246,3 +247,27 @@ async def test_empty_session_with_unknown_session_cookie_not_stored(memory_store
         assert res.status_code == 200
         assert res.headers["set-cookie"].startswith("session=null;")
         assert not await memory_store.exists("unknown")
+
+
+async def test_null_session_cookie_does_not_trigger_store_lookup() -> None:
+    # https://github.com/litestar-org/litestar/issues/5171
+    get_calls = []
+
+    class TrackingStore(MemoryStore):
+        async def get(self, key: str, renew_for: int | None = None) -> bytes | None:
+            get_calls.append(key)
+            return await super().get(key, renew_for=renew_for)
+
+    store = TrackingStore()
+
+    @get("/")
+    def handler(request: Request) -> dict[str, str]:
+        return {"session": str(request.session)}
+
+    app = Litestar([handler], middleware=[ServerSideSessionConfig().middleware], stores={"sessions": store})
+
+    with TestClient(app, cookies={"session": "null"}) as client:
+        res = client.get("/")
+        assert res.status_code == 200
+        assert "null" not in get_calls
+        assert len(get_calls) == 0

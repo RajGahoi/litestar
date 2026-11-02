@@ -6,6 +6,11 @@
 .. changelog:: 3.0.0
     :date: 2364-01-27
 
+
+.. changelog:: 3.0.0
+    :date: 2364-01-27
+
+<<<<<<< HEAD
     .. change:: DI: Correctly set Pydantic dependency fields as required without a default
         :type: bugfix
         :pr: 5195
@@ -68,6 +73,16 @@
         receives the two values it was given, rather than one comma-joined value. Header
         values are also passed on as the bytes they were given in, where they were decoded
         and re-encoded as UTF-8 before.
+=======
+    .. change:: ServerSideSessionBackend: Expire session cookie with Max-Age=0 and skip store lookup for null cookie
+        :type: bugfix
+        :issue: 5171
+
+        Fix a bug where ``ServerSideSessionBackend`` omitted ``Max-Age=0`` when expiring
+        the session cookie on session clearing, causing browsers compliant with RFC 6265
+        to retain the cookie when ``ServerSideSessionConfig.max_age`` was set. Additionally,
+        skip session store lookup when the incoming session cookie value is ``"null"``.
+
 
     .. change:: Fix ``Optional`` / ``Any`` + ``required=False`` + without default parameters receiving ``Empty``
         :type: bugfix
